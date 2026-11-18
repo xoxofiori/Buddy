@@ -14,7 +14,7 @@ struct NameStepView: View {
         VStack(spacing: 24) {
             Spacer(minLength: 0)
 
-            BuddyPlaceholder()
+            BuddyView(pose: .waving, height: 230)
 
             VStack(spacing: 8) {
                 Text("Hi! I'm Buddy!")

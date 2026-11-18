@@ -1,7 +1,7 @@
 # Buddy — a PT app for kids
 
 ## What this is
-An iPhone app physical therapists give to kid patients. The kid takes care of a puppy (a labrador named Buddy) that lives in the app, in the style of Talking Tom / Bubbu. Doing their PT exercises earns coins, and coins feed, bathe, rest and dress Buddy. Exercises use the iPhone camera to count reps and check form. This is a **demo build** that runs on sample data and has no real backend.
+An iPhone app physical therapists give to kid patients. The kid takes care of a puppy (a labrador named Buddy) that lives in the app, in the style of Talking Tom / Bubbu. Doing their PT exercises earns bones, and kids look after Buddy (feed, bathe, nap, play, dress up) in his backyard. Exercises use the iPhone camera to count reps and check form. This is a **demo build** that runs on sample data and has no real backend.
 
 ## Stack (keep it this simple)
 - SwiftUI, iOS 17+, iPhone only, portrait only
@@ -17,27 +17,33 @@ An iPhone app physical therapists give to kid patients. The kid takes care of a 
 - Big tap targets (min 60pt) for small hands. Every action has bouncy spring animations and a sound or haptic.
 - Feedback copy is always encouraging. Never say "wrong." Examples: "Great bend! Keep going!", "Almost! Go a little lower.", "Step back so Buddy can see your knees."
 - Buddy is an **original** cartoon labrador (golden, floppy ears, round and friendly). Don't copy Talking Tom's artwork, name or sounds, but use Tom as the reference for how human-like Buddy should be. Buddy stands upright on two legs, has arms and hands, and has an expressive, almost human face (big eyes, eyebrows, a mouth that smiles, talks and yawns). He moves like a person, so he can demo exercises the way a kid would do them: raising his arms, squatting, and so on.
-- For now, draw Buddy in SwiftUI shapes (head, ears, body, eyes that blink, tail that wags) with separate poses for idle, happy, eating, sleeping, bathing and demoing exercises, so Fiori can swap in real art later. Keep all of Buddy's drawing in `Buddy/Character/`.
+- **Buddy is built from Fiori's art, not drawn in code.** Follow `BuddyCharacter/CHARACTER.md` exactly: the PDF parts in `Assets.xcassets` (Preserve Vector Data, single scale) are stacked in `Buddy/Character/BuddyView.swift` and only rotated, scaled or swapped (layer order, pivots, poses, blink, breathing, tail). Never redraw or offset parts. Poses: idle, talking, waving, armRaise, sleeping, needsCare, squat, plus eating and happy (made from the same parts) for the care rooms.
+- **The UI follows `BuddyCharacter/UI_DIRECTION.md`**: Talking Tom is a reference for feel only. Soft storybook style (flat colors, gentle gradients, paper-cut shapes, paper texture), not glossy 3D.
 
 ## Screens
 1. **Onboarding**: name, then PT code. Code `BUDDY123` loads the sample recovery plan. Show a friendly error for any other code.
-2. **Home ("Buddy's house")**:
-   - **To-do strip at the top**: today's exercises plus a "How's your knee?" check-in (emoji scale 1–5, Granola-style quick check-in)
-   - Buddy in the middle of the room. Idles with small moves. Reacts when tapped (giggle, wiggle, bark), petted (drag) or poked.
-   - Need bars: Hunger, Energy, Clean, Fun. These decay slowly over real time.
-   - Bottom bar of round buttons: Kitchen, Bath, Bed, Closet, Shop, Exercises
-   - Coin counter top right
-3. **Kitchen**: swipe a food carousel (kibble, bone, apple, carrot, pupcake, ...), drag food to Buddy's mouth, eating animation, hunger bar fills
-4. **Bath**: scrub with soap (drag), bubbles appear, rinse with shower button, Clean bar fills
-5. **Bed**: tap the lamp so lights go off, Buddy sleeps (Zzz) and Energy fills over time
-6. **Closet/Shop**: buy and equip hats, bandanas, glasses and toys with coins. Equipped items show on Buddy.
-7. **Exercise session** (from the to-do list): Buddy demos the move, then a live camera view with a skeleton overlay, rep counter ("6 / 10 reps"), accuracy %, and spoken feedback. Finishing earns coins and stars, then a celebration screen.
+2. **Home ("Buddy's Backyard")**: one illustrated scene, no bottom button bar.
+   - **"Today with Buddy" card at the top**: big tiles for each exercise (mini Buddy doing the move, reps, "Let's go") plus the "How's your knee?" check-in. Done tiles flip to a sticker.
+   - Buddy stands on the garden path. Tap head (giggle, ears flop), tap belly (squash bounce), drag to pet (hearts).
+   - **Care by tapping things in the yard**: food bowl → feed, kiddie pool → bath, doghouse → nap, toy box → shop, arch on the garden path → Recovery Trail. A thing bobs when its need is low.
+   - Needs (fed, clean, rested, played) decay slowly over real time and show as **one heart on Buddy's collar tag** that fills in sections. Tap the tag for details.
+   - **Bones** counter top right (the currency).
+   - Sky follows the real clock: morning, day, sunset, night (stars, fireflies, Buddy dozes). Hold "Hi Maya!" for the grown-up menu (preview times of day, start over).
+   - Every yard object that opens a screen has a small floating icon badge above it, so kids know to tap it.
+   - **Basic care is always free** (kibble, plain soap, naps) so a kid is never stuck; treats and rainbow soap cost bones.
+3. **Food bowl ("Snack time")**: swipe a food carousel (kibble, bone, apple, carrot, pupcake, ...), drag food to Buddy's mouth, the "fed" heart section fills
+4. **Pool ("Bath time")**: scrub with soap (drag), bubbles appear, rinse, the "clean" section fills
+5. **Doghouse ("Nap time")**: tap the lamp to turn off the lights, tuck Buddy in, he sleeps (Zzz) and the "rested" section fills over time
+6. **Shop (toy box)**: buy and equip hats, bandanas, glasses and toys with bones, all in one place (there is no separate Closet). Equipped items show on Buddy.
+7. **Exercise session** (from the to-do list): Buddy demos the move, then a live camera view with a skeleton overlay, rep counter ("6 / 10 reps"), accuracy %, and spoken feedback. Finishing earns bones (golden bones for perfect form) and stars, then a celebration screen. See UI_DIRECTION.md §5 for the side-by-side layout.
 
 ## Demo exercises (pose tracking)
 - **Arm raises (shoulder flexion)**: angle at the shoulder between hip, shoulder and wrist. A rep counts when it goes from <40° up to >150° and back. Cue "Reach higher!" if the peak is under 150°.
 - **Mini squats**: knee angle between hip, knee and ankle. A rep counts when it goes from >160° down to <120° and back up. Cue "Bend a little more!" or "Not too low!" (<70°).
 - Smooth the angles over the last ~5 frames. Ignore joints with confidence < 0.3. If key joints aren't visible, say "Step back so Buddy can see you."
-- Accuracy = % of reps that hit the target range.
+- Accuracy = % of reps that hit the target range. A try that stops short (arm raise peak under 150°, squat not below 120°) gets its cue and counts as a try but not a rep; a squat below 70° counts as a rep but is off target. So accuracy = on-target reps ÷ all tries.
+- Each rep earns a bone; each on-target rep is a golden bone (worth 2). Finishing marks the exercise done on today's card and updates today's history line.
+- Devices without a front camera (the Simulator) and kids without camera permission get **practice mode**: a pretend skeleton does the reps (with a few short and too-deep ones) through the same counting code.
 
 ## Sample data
 Seed `SampleData.swift` with patient "Maya", age 8, knee recovery, PT "Dr. Lee". Plan: Arm raises 2×10, Mini squats 2×8, daily check-in, reminders at 4:00 PM. Include a 2-week fake history so a "progress" view has something to show (adherence %).

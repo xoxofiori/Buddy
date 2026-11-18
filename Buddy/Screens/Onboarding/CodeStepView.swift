@@ -28,11 +28,12 @@ struct CodeStepView: View {
 
             Spacer(minLength: 0)
 
-            BuddyPlaceholder(size: 120)
+            BuddyView(pose: showError ? .needsCare : .idle, height: 180)
 
             VStack(spacing: 8) {
                 Text("Nice to meet you, \(store.state.kidName)!")
                     .font(.buddyHeader)
+                    .minimumScaleFactor(0.7)
                 Text("Type the code from your PT.")
                     .font(.buddyBody)
                     .foregroundStyle(Color.deepTeal.opacity(0.7))

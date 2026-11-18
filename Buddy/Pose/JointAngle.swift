@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
 
-/// Pose-tracking math (camera + Vision come in Phase 5).
-enum JointAngle {
+/// Pose-tracking math.
+nonisolated enum JointAngle {
     /// Angle in degrees at point `b`, between the lines b→a and b→c.
     /// e.g. knee angle = degrees(hip, knee, ankle).
     static func degrees(_ a: CGPoint, _ b: CGPoint, _ c: CGPoint) -> Double {

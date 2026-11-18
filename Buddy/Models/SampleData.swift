@@ -19,14 +19,15 @@ enum SampleData {
         reminderMinute: 0
     )
 
-    static let starterCoins = 50
+    static let starterBones = 50
 
     static func makeState(today: Date = Date()) -> GameState {
         var state = GameState()
         state.kidName = patient.name
         state.patient = patient
         state.plan = plan
-        state.coins = starterCoins
+        state.bones = starterBones
+        state.needs = Needs(hunger: 0.7, energy: 0.85, clean: 0.55, fun: 0.6)
         state.history = twoWeekHistory(endingBefore: today)
         return state
     }

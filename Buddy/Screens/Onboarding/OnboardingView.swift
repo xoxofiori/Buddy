@@ -56,28 +56,3 @@ private struct StepDots: View {
         .animation(Theme.bouncy, value: current)
     }
 }
-
-/// Stand-in for Buddy until he's drawn in Phase 2.
-struct BuddyPlaceholder: View {
-    var size: CGFloat = 160
-    @State private var bounce = false
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color.sunny)
-            Image(systemName: "pawprint.fill")
-                .font(.system(size: size * 0.45))
-                .foregroundStyle(Color.paper)
-        }
-        .frame(width: size, height: size)
-        .shadow(color: .sunny.opacity(0.4), radius: 0, x: 0, y: 8)
-        .offset(y: bounce ? -8 : 0)
-        .onAppear {
-            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                bounce = true
-            }
-        }
-        .accessibilityLabel("Buddy")
-    }
-}

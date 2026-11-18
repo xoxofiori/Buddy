@@ -1,0 +1,106 @@
+import SwiftUI
+import Testing
+@testable import Buddy
+
+/// Saves PNGs of Buddy and the home screen for a quick visual check.
+/// Only runs when RENDER_DIR is set, e.g.
+/// `TEST_RUNNER_RENDER_DIR=/some/folder xcodebuild test ...`
+@MainActor
+struct RenderSnapshots {
+    private var renderDir: URL? {
+        ProcessInfo.processInfo.environment["RENDER_DIR"].map { URL(filePath: $0) }
+    }
+
+    @Test func buddyPoses() throws {
+        guard let dir = renderDir else { return }
+        let grid = LazyVGrid(columns: [GridItem(), GridItem(), GridItem(), GridItem()], spacing: 16) {
+            ForEach(BuddyPose.allCases, id: \.self) { pose in
+                VStack {
+                    BuddyView(pose: pose, height: 300)
+                    Text(pose.rawValue).font(.buddyBody)
+                }
+            }
+        }
+        .padding(30)
+        .frame(width: 1000)
+        .background(Color.cream)
+        try save(grid, to: dir.appending(path: "buddy-poses.png"))
+    }
+
+    @Test func homeAtEveryTimeOfDay() throws {
+        guard let dir = renderDir else { return }
+        let store = GameStore(fileURL: FileManager.default.temporaryDirectory.appending(path: "render-\(UUID()).json"))
+        store.state.kidName = "Maya"
+        _ = store.redeem(code: "BUDDY123")
+        for time in TimeOfDay.allCases {
+            let home = HomeView(forcedTime: time)
+                .environment(store)
+                .fontDesign(.rounded)
+                .frame(width: 402, height: 874)
+            try save(home, to: dir.appending(path: "home-\(time.rawValue).png"))
+        }
+    }
+
+    @Test func careRooms() throws {
+        guard let dir = renderDir else { return }
+        let store = GameStore(fileURL: FileManager.default.temporaryDirectory.appending(path: "rooms-\(UUID()).json"))
+        store.state.kidName = "Maya"
+        _ = store.redeem(code: "BUDDY123")
+        store.state.needs = Needs(hunger: 0.4, energy: 0.3, clean: 0.35, fun: 0.6)
+        let rooms: [(String, AnyView)] = [
+            ("kitchen", AnyView(KitchenView {})),
+            ("bath", AnyView(BathView {})),
+            ("bed", AnyView(BedView {})),
+        ]
+        for (name, view) in rooms {
+            let screen = view
+                .environment(store)
+                .fontDesign(.rounded)
+                .frame(width: 402, height: 874)
+            try save(screen, to: dir.appending(path: "room-\(name).png"))
+        }
+    }
+
+    @Test func exerciseScreens() throws {
+        guard let dir = renderDir else { return }
+        let store = GameStore(fileURL: FileManager.default.temporaryDirectory.appending(path: "exr-\(UUID()).json"))
+        store.state.kidName = "Maya"
+        _ = store.redeem(code: "BUDDY123")
+        for planned in store.state.plan?.exercises ?? [] {
+            let demo = ExerciseSessionView(exercise: planned, kidName: "Maya", practice: true) {}
+            try save(demo.environment(store).fontDesign(.rounded).frame(width: 402, height: 874),
+                     to: dir.appending(path: "exercise-\(planned.kind.rawValue)-demo.png"))
+
+            let session = ExerciseSession(exercise: planned, kidName: "Maya", practice: true)
+            let pretend = PracticePoseSource(kind: planned.kind)
+            let angles = stride(from: 0.0, to: 3 * PracticePoseSource.repTime + 1.6, by: 1.0 / 30).map { pretend.angle(at: $0) }
+            session.preview(phase: .active, frame: pretend.frame(at: 3 * PracticePoseSource.repTime + 1.6), reps: angles)
+            let framing = ExerciseSession(exercise: planned, kidName: "Maya", practice: true)
+            framing.preview(phase: .framing, frame: nil)
+            try save(ExerciseActiveView(session: framing) {}.background(Color.cream)
+                        .environment(store).fontDesign(.rounded).frame(width: 402, height: 874),
+                     to: dir.appending(path: "exercise-\(planned.kind.rawValue)-framing.png"))
+            let active = ExerciseActiveView(session: session) {}
+                .background(Color.cream)
+            try save(active.environment(store).fontDesign(.rounded).frame(width: 402, height: 874),
+                     to: dir.appending(path: "exercise-\(planned.kind.rawValue)-active.png"))
+        }
+        let celebration = CelebrationView(kind: .armRaises, kidName: "Maya",
+                                          result: ExerciseResult(reps: 20, inTargetReps: 18, tries: 21),
+                                          reward: ExerciseReward(bones: 38, goldenBones: 18)) {}
+            .background(Color.cream)
+        try save(celebration.environment(store).fontDesign(.rounded).frame(width: 402, height: 874),
+                 to: dir.appending(path: "exercise-celebration.png"))
+    }
+
+    private func save(_ view: some View, to url: URL) throws {
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2
+        guard let image = renderer.uiImage, let data = image.pngData() else {
+            Issue.record("Render failed")
+            return
+        }
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try data.write(to: url)
+    }
+}
