@@ -14,19 +14,15 @@ struct HomeView: View {
     @State private var sheet: HomeSheet?
     @State private var room: CareRoom?
     @State private var exercise: PlannedExercise?
-    @State private var showMenu = false
     @State private var planExpanded = true
+    @State private var confirmStartOver = false
 
     private var time: TimeOfDay { forcedTime ?? timeOverride ?? TimeOfDay(date: now) }
 
     var body: some View {
         ZStack {
             BackyardScene(time: time, needs: store.state.needs) { spot in
-                if let careRoom = spot.room {
-                    room = careRoom
-                } else {
-                    sheet = .spot(spot)
-                }
+                room = spot.room
             }
             .ignoresSafeArea()
 
@@ -66,24 +62,23 @@ struct HomeView: View {
                     exercise = nil
                     now = Date()
                 }
+                .environment(\.buddyOutfit, store.state.outfit)
             }
         }
         .sheet(item: $sheet) { sheet in
             sheetView(sheet)
         }
         .fullScreenCover(item: $room) { room in
-            switch room {
-            case .kitchen: KitchenView { self.room = nil }
-            case .bath: BathView { self.room = nil }
-            case .bed: BedView { self.room = nil }
+            Group {
+                switch room {
+                case .kitchen: KitchenView { self.room = nil }
+                case .bath: BathView { self.room = nil }
+                case .bed: BedView { self.room = nil }
+                case .shop: ShopView { self.room = nil }
+                case .progress: ProgressScreen { self.room = nil }
+                }
             }
-        }
-        .confirmationDialog("Grown-up menu", isPresented: $showMenu, titleVisibility: .visible) {
-            ForEach(TimeOfDay.allCases) { t in
-                Button("Show \(t.title.lowercased())") { timeOverride = t }
-            }
-            Button("Follow the real clock") { timeOverride = nil }
-            Button("Start the demo over", role: .destructive) { store.reset() }
+            .environment(\.buddyOutfit, store.state.outfit)
         }
         .task {
             // Needs drain slowly in real time (including while the app was closed),
@@ -111,25 +106,63 @@ struct HomeView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 .shadow(color: .black.opacity(time == .night ? 0.3 : 0), radius: 3)
-                // Hidden grown-up menu: hold the greeting.
-                .onLongPressGesture(minimumDuration: 1.5) { showMenu = true }
+                // Hidden grown-up settings: hold the greeting for 1.5 seconds.
+                .onLongPressGesture(minimumDuration: 1.5) {
+                    Feedback.tap()
+                    sheet = .settings
+                }
             Spacer()
-            BoneCounter(bones: store.state.bones)
+            demoMenu
         }
         .padding(.horizontal, 6)
+    }
+
+    /// Hidden demo controls: tap the bone counter.
+    private var demoMenu: some View {
+        Menu {
+            Button {
+                store.resetToday()
+                now = Date()
+                Feedback.success()
+            } label: {
+                Label("Reset today", systemImage: "arrow.counterclockwise")
+            }
+            Button(role: .destructive) {
+                confirmStartOver = true
+            } label: {
+                Label("Start over", systemImage: "trash")
+            }
+        } label: {
+            BoneCounter(bones: store.state.bones)
+        }
+        .menuOrder(.fixed)
+        .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
+        .confirmationDialog("Start the demo over?", isPresented: $confirmStartOver, titleVisibility: .visible) {
+            Button("Start over", role: .destructive) {
+                timeOverride = nil
+                store.reset()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This clears the saved game and goes back to the start.")
+        }
     }
 
     @ViewBuilder
     private func sheetView(_ sheet: HomeSheet) -> some View {
         switch sheet {
-        case .spot(let spot):
-            ComingSoonSheet(title: spot.title, message: spot.comingSoon, pose: spot.pose)
         case .checkIn:
-            ComingSoonSheet(title: "Knee check",
-                            message: "Soon you'll wake Buddy up each morning and tell him how your knee feels.",
-                            pose: .talking)
+            CheckInView {
+                self.sheet = nil
+                now = Date()
+            }
+            .environment(\.buddyOutfit, store.state.outfit)
+            .presentationDetents([.large])
+            .presentationCornerRadius(36)
         case .heart:
             HeartDetailSheet(needs: store.state.needs)
+        case .settings:
+            GrownUpSettingsView(timeOverride: $timeOverride) { self.sheet = nil }
         }
     }
 }

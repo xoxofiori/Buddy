@@ -54,7 +54,7 @@ struct TodayCard: View {
                 .frame(minHeight: Theme.minTap)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(SquishStyle())
             .accessibilityLabel(expanded ? "Hide today's plan" : "Show today's plan")
 
             if expanded {
@@ -75,7 +75,6 @@ struct TodayCard: View {
         .background(StoryCard(shape: RoundedRectangle(cornerRadius: 30)))
         .clipShape(RoundedRectangle(cornerRadius: 30))
         .offset(y: shown ? 0 : -420)
-        .sensoryFeedback(.impact(weight: .light), trigger: taps)
         .onAppear {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.75).delay(0.15)) { shown = true }
         }

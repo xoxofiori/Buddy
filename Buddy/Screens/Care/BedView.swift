@@ -95,7 +95,6 @@ struct BedView: View {
                 Spacer()
             }
         }
-        .sensoryFeedback(.impact(weight: .medium), trigger: haptic)
         .sensoryFeedback(.success, trigger: rested)
         .task(id: lightsOn) {
             guard !lightsOn else { return }

@@ -35,12 +35,13 @@ enum SampleData {
     /// 14 days of made-up history so the progress view has something to show.
     /// Hand-written so it looks the same every time: mostly good days, a couple of misses.
     static func twoWeekHistory(endingBefore today: Date) -> [DayRecord] {
-        // (exercises done out of 2, average accuracy, knee feeling 1–5 or nil)
-        let days: [(done: Int, accuracy: Double, knee: Int?)] = [
-            (1, 0.60, 2), (2, 0.65, 2), (2, 0.70, 3), (0, 0.00, nil),
-            (2, 0.72, 3), (2, 0.75, 3), (1, 0.78, 3), (2, 0.80, 4),
-            (2, 0.82, 4), (0, 0.00, 3), (2, 0.85, 4), (2, 0.86, 4),
-            (2, 0.88, 5), (2, 0.90, 5),
+        // (exercises done out of 2, average accuracy, knee pain 1–10 or nil if no check-in)
+        // Pain eases over the two weeks, like a recovering knee.
+        let days: [(done: Int, accuracy: Double, pain: Int?)] = [
+            (1, 0.60, 7), (2, 0.65, 7), (2, 0.70, 6), (0, 0.00, nil),
+            (2, 0.72, 6), (2, 0.75, 5), (1, 0.78, 5), (2, 0.80, 4),
+            (2, 0.82, 4), (0, 0.00, 5), (2, 0.85, 3), (2, 0.86, 3),
+            (2, 0.88, 2), (2, 0.90, 2),
         ]
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: today)
@@ -57,7 +58,7 @@ enum SampleData {
                 exercisesDone: day.done,
                 reps: reps,
                 accuracy: day.accuracy,
-                kneeFeeling: day.knee
+                pain: day.pain
             )
         }
     }

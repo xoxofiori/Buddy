@@ -16,5 +16,6 @@ struct RootView: View {
             }
         }
         .animation(Theme.bouncy, value: store.state.hasFinishedOnboarding)
+        .environment(\.buddyOutfit, store.state.outfit)
     }
 }

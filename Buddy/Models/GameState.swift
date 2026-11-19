@@ -34,6 +34,8 @@ struct GameState: Codable, Equatable {
 struct TodayProgress: Codable, Equatable {
     var date: Date
     var doneIDs: [String] = []
+    /// Today's knee pain, 1–10, once the kid has checked in.
+    var pain: Int?
     var reps = 0
     var inTargetReps = 0
     var tries = 0
@@ -130,13 +132,16 @@ struct DayRecord: Codable, Equatable, Identifiable {
     var reps: Int
     /// 0–1: share of reps that hit the target range.
     var accuracy: Double
-    /// 1–5 answer to "How's your knee?", if the kid checked in.
-    var kneeFeeling: Int?
+    /// 1–10 answer to "How's your knee?" (how much it hurts), if the kid checked in.
+    var pain: Int?
 
     var id: Date { date }
 }
 
 extension GameState {
+    /// What Buddy is wearing (from the equipped items).
+    var outfit: Outfit { Outfit(ids: equippedItemIDs) }
+
     /// Share of planned exercises actually done across the history, 0–1.
     var adherence: Double {
         let planned = history.reduce(0) { $0 + $1.exercisesPlanned }

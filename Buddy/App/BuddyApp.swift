@@ -2,7 +2,8 @@ import SwiftUI
 
 @main
 struct BuddyApp: App {
-    @State private var store = GameStore()
+    /// Pass `-resetDemo` as a launch argument to start the demo over on startup.
+    @State private var store = GameStore.launching()
 
     var body: some Scene {
         WindowGroup {

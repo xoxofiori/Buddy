@@ -356,6 +356,7 @@ private struct FramingCard: View {
                 .font(.buddy(17, .heavy))
                 .foregroundStyle(Color.coral)
                 .frame(minWidth: 120, minHeight: 48)
+                .buttonStyle(SquishStyle())
         }
         .foregroundStyle(Color.deepTeal)
         .padding(20)
@@ -453,11 +454,13 @@ private struct CameraHelpCard: View {
                 if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
             }
             .font(.buddy(17, .heavy))
-            .frame(minHeight: 44)
+            .frame(minHeight: 48)
+            .buttonStyle(SquishStyle())
             Button("Practice without camera", action: onPractice)
                 .font(.buddy(15, .bold))
                 .foregroundStyle(Color.deepTeal.opacity(0.6))
-                .frame(minHeight: 44)
+                .frame(minHeight: 48)
+                .buttonStyle(SquishStyle())
         }
         .foregroundStyle(Color.deepTeal)
         .padding(18)

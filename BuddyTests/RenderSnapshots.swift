@@ -93,6 +93,66 @@ struct RenderSnapshots {
                  to: dir.appending(path: "exercise-celebration.png"))
     }
 
+    @Test func shopAndOutfits() throws {
+        guard let dir = renderDir else { return }
+        let store = GameStore(fileURL: FileManager.default.temporaryDirectory.appending(path: "shopr-\(UUID()).json"))
+        store.state.kidName = "Maya"
+        _ = store.redeem(code: "BUDDY123")
+        _ = store.buy(.partyHat)
+        _ = store.buy(.redBandana)
+        try save(ShopView {}.environment(store).fontDesign(.rounded).frame(width: 402, height: 874),
+                 to: dir.appending(path: "shop.png"))
+
+        // Every item on Buddy
+        let looks: [Outfit] = [
+            Outfit(hat: .partyHat, bandana: .redBandana, glasses: .roundGlasses, toy: .tennisBall),
+            Outfit(hat: .cap, bandana: .skyBandana, glasses: .heartGlasses, toy: .squeakyBone),
+            Outfit(hat: .beanie, bandana: .starBandana, glasses: .starSunglasses, toy: .frisbee),
+            Outfit(hat: .crown, toy: .rubberDuck),
+            Outfit(toy: .teddy),
+        ]
+        let grid = HStack(spacing: 10) {
+            ForEach(looks.indices, id: \.self) { i in
+                BuddyView(pose: .idle, height: 300).environment(\.buddyOutfit, looks[i])
+            }
+        }
+        .padding(20)
+        .background(Color.cream)
+        try save(grid, to: dir.appending(path: "outfits.png"))
+    }
+
+    @Test func checkInProgressAndSettings() throws {
+        guard let dir = renderDir else { return }
+        let store = GameStore(fileURL: FileManager.default.temporaryDirectory.appending(path: "cps-\(UUID()).json"))
+        store.state.kidName = "Maya"
+        _ = store.redeem(code: "BUDDY123")
+        store.finishExercise(.armRaises, result: ExerciseResult(reps: 20, inTargetReps: 18, tries: 21))
+        func shot(_ view: some View, _ name: String) throws {
+            try save(view.environment(store).fontDesign(.rounded).frame(width: 402, height: 874),
+                     to: dir.appending(path: name))
+        }
+        try shot(CheckInView {}, "checkin.png")
+        try shot(GrownUpSettingsView(timeOverride: .constant(nil)) {}, "settings.png")
+        store.checkIn(pain: 2)
+        // Progress is in a scroll view (which snapshots can't draw), so render its content tall.
+        try shot(ProgressScreen {}.frame(height: 1300), "progress.png")
+    }
+
+    @Test func onboardingScreens() throws {
+        guard let dir = renderDir else { return }
+        let store = GameStore(fileURL: FileManager.default.temporaryDirectory.appending(path: "ob-\(UUID()).json"))
+        store.state.kidName = "Maya"
+        let screens: [(String, AnyView)] = [
+            ("welcome", AnyView(ZStack { OnboardingScene(); WelcomeStepView {} })),
+            ("name", AnyView(ZStack { OnboardingScene(hillTop: 0.6); NameStepView(onBack: {}, onNext: {}) })),
+            ("code", AnyView(ZStack { OnboardingScene(hillTop: 0.6); CodeStepView(onBack: {}) })),
+        ]
+        for (name, view) in screens {
+            try save(view.environment(store).fontDesign(.rounded).frame(width: 402, height: 874),
+                     to: dir.appending(path: "onboarding-\(name).png"))
+        }
+    }
+
     private func save(_ view: some View, to url: URL) throws {
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2

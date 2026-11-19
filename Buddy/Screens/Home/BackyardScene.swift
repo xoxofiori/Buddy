@@ -10,6 +10,9 @@ struct BackyardScene: View {
 
     @State private var taps = 0
 
+    /// Room for the floating icon above each tappable thing.
+    private static let badgeHeight: CGFloat = 60
+
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
@@ -101,7 +104,6 @@ struct BackyardScene: View {
                 PaperTexture()
             }
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: taps)
     }
 
     private func sunPosition(w: CGFloat, h: CGFloat) -> CGPoint {
@@ -120,16 +122,19 @@ struct BackyardScene: View {
             taps += 1
             onTap(spot)
         } label: {
-            content()
-                .overlay(alignment: .top) {
-                    SpotBadge(icon: spot.icon, color: spot.color, needsCare: low)
-                        .alignmentGuide(.top) { $0[.bottom] + 4 }
-                }
-                .modifier(Bob(active: low))
-                .frame(minWidth: Theme.minTap, minHeight: Theme.minTap)
-                .contentShape(Rectangle())
+            // The icon badge is part of the button, so tapping the icon opens the screen too.
+            VStack(spacing: 4) {
+                SpotBadge(icon: spot.icon, color: spot.color, needsCare: low)
+                    .frame(width: 64, height: Self.badgeHeight, alignment: .bottom)
+                content()
+                    .modifier(Bob(active: low))
+                    .frame(minWidth: Theme.minTap, minHeight: Theme.minTap)
+            }
+            .contentShape(Rectangle())
         }
         .buttonStyle(SquishStyle())
+        // Keep the object where it was; the badge sits above it.
+        .offset(y: -(Self.badgeHeight + 4) / 2)
         .accessibilityLabel(spot.title)
     }
 }

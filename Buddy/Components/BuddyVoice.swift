@@ -12,6 +12,7 @@ final class BuddyVoice {
     }
 
     func say(_ text: String, pitch: Float = 1.7, rate: Float = 0.52) {
+        guard Feedback.voiceOn else { return }
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }

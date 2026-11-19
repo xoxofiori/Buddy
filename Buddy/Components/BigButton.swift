@@ -8,13 +8,9 @@ struct BigButton: View {
     let action: () -> Void
 
     @Environment(\.isEnabled) private var isEnabled
-    @State private var tapCount = 0
 
     var body: some View {
-        Button {
-            tapCount += 1
-            action()
-        } label: {
+        Button(action: action) {
             Text(title)
                 .font(.buddyButton)
                 .foregroundStyle(textColor)
@@ -27,16 +23,19 @@ struct BigButton: View {
                 .opacity(isEnabled ? 1 : 0.45)
         }
         .buttonStyle(SquishStyle())
-        .sensoryFeedback(.impact(weight: .medium), trigger: tapCount)
     }
 }
 
-/// Shrinks a little on press and springs back.
+/// Every button in the app: shrinks a little on press and springs back,
+/// with a soft click and a light tap (see `Feedback`).
 struct SquishStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.92 : 1)
             .animation(Theme.bouncy, value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { Feedback.tap() }
+            }
     }
 }
 

@@ -18,6 +18,9 @@ struct BuddyView<Collar: View>: View {
     /// Something worn at the neck (drawn in 600 × 800 art coordinates, between body and head).
     @ViewBuilder var collar: () -> Collar
 
+    /// Hats, glasses, bandanas and toys from the Shop.
+    @Environment(\.buddyOutfit) private var outfit
+
     // Always-on life
     @State private var poseStart = Date()
     @State private var blinking = false
@@ -98,6 +101,8 @@ struct BuddyView<Collar: View>: View {
         ZStack {
             part("buddy_shadow")
 
+            if let toy = outfit.toy { onCanvas(AccessoryArt(item: toy), size: size) }
+
             part("buddy_tail")
                 .rotationEffect(.degrees(spec.tail), anchor: BuddyPivot.tailBase)
                 .animation(Self.spring, value: pose)
@@ -113,6 +118,7 @@ struct BuddyView<Collar: View>: View {
 
             ZStack {
                 part("buddy_body")
+                if let bandana = outfit.bandana { onCanvas(AccessoryArt(item: bandana), size: size) }
                 collar()
                     .allowsHitTesting(false)
                     .frame(width: 600, height: 800)
@@ -122,7 +128,7 @@ struct BuddyView<Collar: View>: View {
             .scaleEffect(x: 1, y: breath, anchor: BuddyPivot.bodyBase)
             .offset(y: drop)
 
-            headGroup(spec: spec, eyes: eyes, mouth: mouth)
+            headGroup(spec: spec, eyes: eyes, mouth: mouth, size: size)
                 .rotationEffect(.degrees(spec.head), anchor: BuddyPivot.neck)
                 .animation(Self.spring, value: pose)
                 .rotationEffect(.degrees(fidgetHead + chewBob), anchor: BuddyPivot.neck)
@@ -145,7 +151,7 @@ struct BuddyView<Collar: View>: View {
         .scaleEffect(x: 2 - squash, y: squash, anchor: BuddyPivot.feet)
     }
 
-    private func headGroup(spec: BuddyPoseSpec, eyes: BuddyEyes, mouth: BuddyMouth) -> some View {
+    private func headGroup(spec: BuddyPoseSpec, eyes: BuddyEyes, mouth: BuddyMouth, size: CGSize) -> some View {
         ZStack {
             part("buddy_head")
             part("buddy_ear_left")
@@ -159,7 +165,18 @@ struct BuddyView<Collar: View>: View {
             part(eyes.rawValue)
             part(spec.brows.rawValue)
             part(mouth.rawValue)
+            if let glasses = outfit.glasses { onCanvas(AccessoryArt(item: glasses), size: size) }
+            if let hat = outfit.hat { onCanvas(AccessoryArt(item: hat), size: size) }
         }
+    }
+
+    /// Something drawn on the 600 × 800 art canvas, scaled to Buddy's size.
+    private func onCanvas<V: View>(_ view: V, size: CGSize) -> some View {
+        view
+            .frame(width: 600, height: 800)
+            .scaleEffect(size.height / 800, anchor: .topLeading)
+            .frame(width: size.width, height: size.height, alignment: .topLeading)
+            .allowsHitTesting(false)
     }
 
     private func part(_ name: String) -> some View {

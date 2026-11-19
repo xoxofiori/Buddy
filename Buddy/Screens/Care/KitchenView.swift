@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Snack time (opened from the food bowl). Swipe the carousel to pick a snack, then drag it
+/// Snack time (opened from the food bowl), inside Buddy's house. Swipe the carousel to pick a snack, then drag it
 /// up to Buddy's mouth. He chomps it, crumbs fall, and the "fed" part of his heart fills.
 struct KitchenView: View {
     var onClose: () -> Void
@@ -33,7 +33,8 @@ struct KitchenView: View {
 
     var body: some View {
         ZStack {
-            PicnicBackground().ignoresSafeArea()
+            // Inside Buddy's house: wall, window, wooden floor, and a rug under his paws
+            HouseInterior(floorTop: 0.52, rugAt: 0.7).ignoresSafeArea()
 
             GeometryReader { geo in
                 let w = geo.size.width
@@ -115,7 +116,7 @@ struct KitchenView: View {
 
     private func tapped(x: CGFloat, width: CGFloat) {
         guard mode == nil else { return }
-        haptic += 1
+        Feedback.tap()
         if x < width / 2 - 70, selected > 0 {
             withAnimation(Theme.bouncy) { selected -= 1 }
         } else if x > width / 2 + 70, selected < foods.count - 1 {
@@ -296,48 +297,5 @@ private struct CrumbView: View {
             .opacity(fallen ? 0 : 1)
             .allowsHitTesting(false)
             .onAppear { withAnimation(.easeIn(duration: 0.8)) { fallen = true } }
-    }
-}
-
-/// A picnic on the lawn: sky, grass and a checked blanket under Buddy's feet.
-private struct PicnicBackground: View {
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
-            ZStack(alignment: .topLeading) {
-                LinearGradient(colors: [Color.sky.shade(0.25), Color(hex: 0xE4F4FC)], startPoint: .top, endPoint: .bottom)
-                LinearGradient(colors: [Color.sprout.shade(0.1), Color.sprout.shade(-0.12)], startPoint: .top, endPoint: .bottom)
-                    .frame(height: h * 0.5)
-                    .offset(y: h * 0.5)
-                Ellipse()
-                    .fill(Color.sprout.shade(-0.2))
-                    .frame(width: w * 1.4, height: h * 0.16)
-                    .position(x: w * 0.3, y: h * 0.5)
-                // Checked picnic blanket
-                Checks()
-                    .clipShape(Ellipse())
-                    .overlay(Ellipse().strokeBorder(Color.coral.shade(-0.15), lineWidth: 4))
-                    .frame(width: w * 0.92, height: h * 0.15)
-                    .shadow(color: .black.opacity(0.12), radius: 0, x: 0, y: 3)
-                    .position(x: w / 2, y: h * 0.74)
-                PaperTexture()
-            }
-        }
-    }
-}
-
-private struct Checks: View {
-    var body: some View {
-        Canvas { ctx, size in
-            ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.paper))
-            let cell: CGFloat = 22
-            for row in 0..<Int(size.height / cell + 1) {
-                for col in 0..<Int(size.width / cell + 1) where (row + col).isMultiple(of: 2) {
-                    ctx.fill(Path(CGRect(x: CGFloat(col) * cell, y: CGFloat(row) * cell, width: cell, height: cell)),
-                             with: .color(Color.coral.opacity(0.55)))
-                }
-            }
-        }
     }
 }

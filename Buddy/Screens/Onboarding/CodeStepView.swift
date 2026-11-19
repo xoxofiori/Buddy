@@ -12,56 +12,47 @@ struct CodeStepView: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        VStack(spacing: 24) {
-            HStack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.buddy(22, .heavy))
-                        .foregroundStyle(Color.deepTeal)
-                        .frame(width: Theme.minTap, height: Theme.minTap)
-                        .background(Circle().fill(Color.paper))
-                }
-                .buttonStyle(SquishStyle())
-                .accessibilityLabel("Back")
-                Spacer()
-            }
+        VStack(spacing: 0) {
+            OnboardingTopBar(current: 1, onBack: onBack)
 
-            Spacer(minLength: 0)
+            Text("Nice to meet you,\n\(store.state.kidName)!")
+                .font(.system(size: 34, weight: .black, design: .rounded))
+                .foregroundStyle(Color.deepTeal)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.6)
+                .padding(.top, 8)
+                .padding(.horizontal, 20)
 
-            BuddyView(pose: showError ? .needsCare : .idle, height: 180)
+            BuddyView(pose: showError ? .needsCare : .idle)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.top, 8)
 
-            VStack(spacing: 8) {
-                Text("Nice to meet you, \(store.state.kidName)!")
+            OnboardingCard {
+                Text("Type the code from your PT")
                     .font(.buddyHeader)
-                    .minimumScaleFactor(0.7)
-                Text("Type the code from your PT.")
-                    .font(.buddyBody)
-                    .foregroundStyle(Color.deepTeal.opacity(0.7))
-            }
-            .foregroundStyle(Color.deepTeal)
-            .multilineTextAlignment(.center)
-
-            BigTextField(placeholder: "PT code", text: $code, capitalization: .characters)
-                .focused($focused)
-                .submitLabel(.go)
-                .onSubmit(tryCode)
-                .modifier(Shake(amount: CGFloat(shakes)))
-                .onChange(of: code) { if showError { withAnimation(Theme.bouncy) { showError = false } } }
-
-            if showError {
-                Text("Hmm, Buddy doesn't know that code yet. Ask your PT and try again!")
-                    .font(.buddyBody)
-                    .foregroundStyle(Color.coral)
+                    .foregroundStyle(Color.deepTeal)
                     .multilineTextAlignment(.center)
-                    .padding(16)
-                    .background(RoundedRectangle(cornerRadius: 20).fill(Color.coral.opacity(0.12)))
-                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+                    .minimumScaleFactor(0.7)
+
+                BigTextField(placeholder: "PT code", text: $code, capitalization: .characters)
+                    .focused($focused)
+                    .submitLabel(.go)
+                    .onSubmit(tryCode)
+                    .modifier(Shake(amount: CGFloat(shakes)))
+                    .onChange(of: code) { if showError { withAnimation(Theme.bouncy) { showError = false } } }
+
+                if showError {
+                    Text("Hmm, Buddy doesn't know that code yet. Ask your PT and try again!")
+                        .font(.buddy(17, .bold))
+                        .foregroundStyle(Color.coral.shade(-0.15))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .transition(.scale(scale: 0.8).combined(with: .opacity))
+                }
+
+                BigButton(title: "Let's go!", color: .coral, textColor: .paper, action: tryCode)
+                    .disabled(code.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-
-            Spacer(minLength: 0)
-
-            BigButton(title: "Let's go!", color: .sky, textColor: .paper, action: tryCode)
-                .disabled(code.trimmingCharacters(in: .whitespaces).isEmpty)
         }
         .sensoryFeedback(.error, trigger: shakes)
         .sensoryFeedback(.success, trigger: successCount)

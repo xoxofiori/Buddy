@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Step 1: "Hi! I'm Buddy. What's your name?"
+/// Step 1: "Hi! I'm Buddy! What's your name?"
 struct NameStepView: View {
+    let onBack: () -> Void
     let onNext: () -> Void
 
     @Environment(GameStore.self) private var store
@@ -11,30 +12,29 @@ struct NameStepView: View {
     private var trimmed: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer(minLength: 0)
+        VStack(spacing: 0) {
+            OnboardingTopBar(current: 0, onBack: onBack)
 
-            BuddyView(pose: .waving, height: 230)
+            Text("Hi! I'm Buddy!")
+                .font(.system(size: 40, weight: .black, design: .rounded))
+                .foregroundStyle(Color.deepTeal)
+                .padding(.top, 8)
 
-            VStack(spacing: 8) {
-                Text("Hi! I'm Buddy!")
-                    .font(.buddyTitle)
+            BuddyView(pose: .waving)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.top, 8)
+
+            OnboardingCard {
                 Text("What's your name?")
                     .font(.buddyHeader)
-                    .foregroundStyle(Color.deepTeal.opacity(0.7))
+                    .foregroundStyle(Color.deepTeal)
+                BigTextField(placeholder: "Your name", text: $name)
+                    .focused($focused)
+                    .submitLabel(.next)
+                    .onSubmit(next)
+                BigButton(title: "Next", color: .coral, textColor: .paper, action: next)
+                    .disabled(trimmed.isEmpty)
             }
-            .foregroundStyle(Color.deepTeal)
-            .multilineTextAlignment(.center)
-
-            BigTextField(placeholder: "Your name", text: $name)
-                .focused($focused)
-                .submitLabel(.next)
-                .onSubmit(next)
-
-            Spacer(minLength: 0)
-
-            BigButton(title: "Next", action: next)
-                .disabled(trimmed.isEmpty)
         }
         .onAppear { name = store.state.kidName }
     }

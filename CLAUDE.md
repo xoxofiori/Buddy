@@ -24,11 +24,15 @@ An iPhone app physical therapists give to kid patients. The kid takes care of a 
 1. **Onboarding**: name, then PT code. Code `BUDDY123` loads the sample recovery plan. Show a friendly error for any other code.
 2. **Home ("Buddy's Backyard")**: one illustrated scene, no bottom button bar.
    - **"Today with Buddy" card at the top**: big tiles for each exercise (mini Buddy doing the move, reps, "Let's go") plus the "How's your knee?" check-in. Done tiles flip to a sticker.
+   - **Check-in**: the kid rates knee pain 1–10 (faces, green → coral). Buddy's face mirrors the answer; for 7+ he kindly asks them to tell a grown-up or Dr. Lee. Saved per day (+2 bones the first time each day).
+   - **Recovery Trail / progress** (map icon + arch on the garden path): streak (days in a row with an exercise), adherence % over 2 weeks, reps per day chart, and the knee-pain trend.
    - Buddy stands on the garden path. Tap head (giggle, ears flop), tap belly (squash bounce), drag to pet (hearts).
    - **Care by tapping things in the yard**: food bowl → feed, kiddie pool → bath, doghouse → nap, toy box → shop, arch on the garden path → Recovery Trail. A thing bobs when its need is low.
    - Needs (fed, clean, rested, played) decay slowly over real time and show as **one heart on Buddy's collar tag** that fills in sections. Tap the tag for details.
    - **Bones** counter top right (the currency).
-   - Sky follows the real clock: morning, day, sunset, night (stars, fireflies, Buddy dozes). Hold "Hi Maya!" for the grown-up menu (preview times of day, start over).
+   - Sky follows the real clock: morning, day, sunset, night (stars, fireflies, Buddy dozes). Hold "Hi Maya!" for 1.5 s to open the hidden grown-up settings: patient/plan info, sound effects and voice switches, time-of-day preview, and **Reset demo**.
+   - **Hidden demo menu**: tap the bones counter for **Reset today** (keeps the kid, bones and outfit; clears today's to-dos, check-in and today's history line) and **Start over** (asks first, then clears the saved game and returns to onboarding). The launch argument **`-resetDemo`** does the same as Start over on startup.
+   - Every button gives a soft click and a light haptic (`SquishStyle` + `Feedback`); tapping a yard object *or its floating icon* opens its screen.
    - Every yard object that opens a screen has a small floating icon badge above it, so kids know to tap it.
    - **Basic care is always free** (kibble, plain soap, naps) so a kid is never stuck; treats and rainbow soap cost bones.
 3. **Food bowl ("Snack time")**: swipe a food carousel (kibble, bone, apple, carrot, pupcake, ...), drag food to Buddy's mouth, the "fed" heart section fills

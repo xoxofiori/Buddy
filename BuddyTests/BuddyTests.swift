@@ -285,3 +285,143 @@ struct ExerciseRewardTests {
         #expect(ExerciseResult(reps: 4, inTargetReps: 3, tries: 10).stars == 1)
     }
 }
+
+@MainActor
+struct ShopTests {
+    private func store() -> GameStore {
+        let s = GameStore(fileURL: FileManager.default.temporaryDirectory.appending(path: "shop-\(UUID()).json"))
+        s.state.kidName = "Maya"
+        _ = s.redeem(code: "BUDDY123")
+        return s
+    }
+
+    @Test func mayaStartsWith50Bones() {
+        #expect(store().state.bones == 50)
+    }
+
+    @Test func buyingCostsBonesAndPutsItOn() {
+        let s = store()
+        #expect(s.buy(.partyHat) == .bought)
+        #expect(s.state.bones == 42)
+        #expect(s.owns(.partyHat))
+        #expect(s.state.outfit.hat == .partyHat)
+    }
+
+    @Test func cantBuyTwiceOrWithoutEnoughBones() {
+        let s = store()
+        _ = s.buy(.crown)
+        #expect(s.buy(.crown) == .alreadyOwned)
+        #expect(s.state.bones == 25)
+        s.state.bones = 3
+        #expect(s.buy(.teddy) == .needsBones)
+        #expect(!s.owns(.teddy))
+    }
+
+    @Test func oneOfEachKindAtATime() {
+        let s = store()
+        _ = s.buy(.partyHat)
+        _ = s.buy(.cap)
+        _ = s.buy(.roundGlasses)
+        #expect(s.state.outfit == Outfit(hat: .cap, glasses: .roundGlasses))
+        s.toggleWearing(.partyHat)
+        #expect(s.state.outfit.hat == .partyHat)
+        s.toggleWearing(.partyHat)
+        #expect(s.state.outfit.hat == nil)
+        #expect(s.state.outfit.glasses == .roundGlasses)
+    }
+
+    @Test func cantWearWhatYouDontOwn() {
+        let s = store()
+        s.toggleWearing(.teddy)
+        #expect(s.state.outfit.toy == nil)
+    }
+}
+
+@MainActor
+struct CheckInAndProgressTests {
+    private func store() -> GameStore {
+        let s = GameStore(fileURL: FileManager.default.temporaryDirectory.appending(path: "cp-\(UUID()).json"))
+        s.state.kidName = "Maya"
+        _ = s.redeem(code: "BUDDY123")
+        return s
+    }
+
+    @Test func checkInSavesPainAndTicksTheCard() {
+        let s = store()
+        #expect(s.checkIn(pain: 3) == 2)
+        #expect(s.doneToday().contains("checkIn"))
+        #expect(s.state.history.last?.pain == 3)
+        #expect(s.state.bones == 52)
+        // Checking in again updates the answer but doesn't pay twice
+        #expect(s.checkIn(pain: 5) == 0)
+        #expect(s.state.history.last?.pain == 5)
+        #expect(s.state.bones == 52)
+    }
+
+    @Test func painStaysBetweenOneAndTen() {
+        let s = store()
+        s.checkIn(pain: 14)
+        #expect(s.state.today?.pain == 10)
+    }
+
+    @Test func streakCountsDaysInARow() {
+        let s = store()
+        // Sample history: the last 4 days were all exercise days (the one before was a miss).
+        #expect(s.streak() == 4)
+        s.finishExercise(.armRaises, result: ExerciseResult(reps: 10, inTargetReps: 10, tries: 10))
+        #expect(s.streak() == 5)
+    }
+
+    @Test func recentDaysCoversTwoWeeksIncludingToday() {
+        let s = store()
+        let days = s.recentDays()
+        #expect(days.count == 14)
+        #expect(Calendar.current.isDateInToday(days.last!.date))
+        #expect(days.contains { $0.pain != nil })
+        #expect(s.adherence() > 0.6 && s.adherence() < 0.9)
+    }
+}
+
+@MainActor
+struct ResetTests {
+    private func playedStore(url: URL) -> GameStore {
+        let s = GameStore(fileURL: url)
+        s.state.kidName = "Maya"
+        _ = s.redeem(code: "BUDDY123")
+        _ = s.buy(.partyHat)
+        s.finishExercise(.armRaises, result: ExerciseResult(reps: 20, inTargetReps: 20, tries: 20))
+        s.checkIn(pain: 3)
+        return s
+    }
+
+    @Test func resetTodayKeepsTheKidButClearsTheDay() {
+        let s = playedStore(url: FileManager.default.temporaryDirectory.appending(path: "rt-\(UUID()).json"))
+        let bones = s.state.bones
+        s.resetToday()
+        #expect(s.doneToday().isEmpty)
+        #expect(s.state.today == nil)
+        #expect(!s.state.history.contains { Calendar.current.isDateInToday($0.date) })
+        #expect(s.state.hasFinishedOnboarding)
+        #expect(s.state.kidName == "Maya")
+        #expect(s.state.bones == bones)
+        #expect(s.state.outfit.hat == .partyHat)
+    }
+
+    @Test func startOverReturnsToOnboarding() {
+        let s = playedStore(url: FileManager.default.temporaryDirectory.appending(path: "so-\(UUID()).json"))
+        s.reset()
+        #expect(!s.state.hasFinishedOnboarding)
+        #expect(s.state.kidName.isEmpty)
+        #expect(s.state.ownedItemIDs.isEmpty)
+    }
+
+    @Test func resetDemoLaunchArgumentStartsOver() {
+        let url = FileManager.default.temporaryDirectory.appending(path: "la-\(UUID()).json")
+        _ = playedStore(url: url)
+        // Without the argument the saved game loads as usual…
+        #expect(GameStore.launching(arguments: ["Buddy"], fileURL: url).state.hasFinishedOnboarding)
+        // …with it, the demo starts over (and stays that way on the next normal launch).
+        #expect(!GameStore.launching(arguments: ["Buddy", "-resetDemo"], fileURL: url).state.hasFinishedOnboarding)
+        #expect(!GameStore.launching(arguments: ["Buddy"], fileURL: url).state.hasFinishedOnboarding)
+    }
+}
