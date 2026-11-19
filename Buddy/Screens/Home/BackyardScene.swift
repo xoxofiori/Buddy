@@ -6,7 +6,12 @@ import SwiftUI
 struct BackyardScene: View {
     let time: TimeOfDay
     let needs: Needs
+    /// Which part to draw. The home screen draws the scenery, then the time-of-day tint,
+    /// then the objects on top, so the objects and their icons stay bright all day.
+    var layer: Layer = .all
     var onTap: (CareSpot) -> Void
+
+    enum Layer { case all, scenery, objects }
 
     @State private var taps = 0
 
@@ -20,6 +25,18 @@ struct BackyardScene: View {
             let horizon = h * 0.565
 
             ZStack(alignment: .topLeading) {
+                if layer != .objects {
+                    scenery(w: w, h: h, horizon: horizon)
+                }
+                if layer != .scenery {
+                    objects(w: w, h: h, horizon: horizon)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func scenery(w: CGFloat, h: CGFloat, horizon: CGFloat) -> some View {
                 // Sky
                 LinearGradient(colors: [time.skyTop, time.skyBottom], startPoint: .top, endPoint: .bottom)
                     .frame(height: horizon + 20)
@@ -75,6 +92,11 @@ struct BackyardScene: View {
                     .frame(width: w, height: h - horizon)
                     .offset(y: horizon)
 
+                PaperTexture()
+    }
+
+    @ViewBuilder
+    private func objects(w: CGFloat, h: CGFloat, horizon: CGFloat) -> some View {
                 // Arch over the path: tap to visit the Recovery Trail
                 spot(.trail) {
                     TrailArch().frame(width: w * 0.2, height: w * 0.2)
@@ -100,10 +122,6 @@ struct BackyardScene: View {
                     KiddiePool().frame(width: w * 0.36, height: w * 0.15)
                 }
                 .position(x: w * 0.8, y: h * 0.88)
-
-                PaperTexture()
-            }
-        }
     }
 
     private func sunPosition(w: CGFloat, h: CGFloat) -> CGPoint {

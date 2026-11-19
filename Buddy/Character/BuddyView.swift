@@ -20,6 +20,8 @@ struct BuddyView<Collar: View>: View {
 
     /// Hats, glasses, bandanas and toys from the Shop.
     @Environment(\.buddyOutfit) private var outfit
+    /// Muddy spots when he needs a bath.
+    @Environment(\.buddyMud) private var mud
 
     // Always-on life
     @State private var poseStart = Date()
@@ -88,6 +90,7 @@ struct BuddyView<Collar: View>: View {
             ? 112 * (motion ?? (1 - cos(t * 2 * .pi / 3)) / 2)   // 6° → 118° and back
             : 0
         let wave = pose == .waving ? sin(t * 2 * .pi / 0.6) * 12 : 0
+        let tummyRub = pose == .hungry ? sin(t * 2 * .pi / 1.4) * 4 : 0
         let chewBob = pose == .eating ? sin(t * 2 * .pi / 0.3) * 3 : 0
 
         // Squat: everything above the legs drops 40, legs squash to 0.75 from the feet
@@ -112,12 +115,14 @@ struct BuddyView<Collar: View>: View {
             ZStack {
                 part("buddy_leg_left")
                 part("buddy_leg_right")
+                if mud > 0 { onCanvas(MudArt(count: mud, part: .legs), size: size) }
             }
             .scaleEffect(x: 1, y: legSquash, anchor: BuddyPivot.feet)
             .animation(Self.spring, value: pose)
 
             ZStack {
                 part("buddy_body")
+                if mud > 0 { onCanvas(MudArt(count: mud, part: .body), size: size) }
                 if let bandana = outfit.bandana { onCanvas(AccessoryArt(item: bandana), size: size) }
                 collar()
                     .allowsHitTesting(false)
@@ -139,13 +144,13 @@ struct BuddyView<Collar: View>: View {
             part("buddy_arm_left")
                 .rotationEffect(.degrees(spec.armLeft - 6), anchor: BuddyPivot.shoulderLeft)
                 .animation(Self.spring, value: pose)
-                .rotationEffect(.degrees(raise + squatArmLeft), anchor: BuddyPivot.shoulderLeft)
+                .rotationEffect(.degrees(raise + squatArmLeft + tummyRub), anchor: BuddyPivot.shoulderLeft)
                 .offset(y: drop)
 
             part("buddy_arm_right")
                 .rotationEffect(.degrees(spec.armRight + 6), anchor: BuddyPivot.shoulderRight)
                 .animation(Self.spring, value: pose)
-                .rotationEffect(.degrees(-raise + wave + squatArmRight), anchor: BuddyPivot.shoulderRight)
+                .rotationEffect(.degrees(-raise + wave + squatArmRight - tummyRub), anchor: BuddyPivot.shoulderRight)
                 .offset(y: drop)
         }
         .scaleEffect(x: 2 - squash, y: squash, anchor: BuddyPivot.feet)
@@ -165,6 +170,7 @@ struct BuddyView<Collar: View>: View {
             part(eyes.rawValue)
             part(spec.brows.rawValue)
             part(mouth.rawValue)
+            if mud > 0 { onCanvas(MudArt(count: mud, part: .head), size: size) }
             if let glasses = outfit.glasses { onCanvas(AccessoryArt(item: glasses), size: size) }
             if let hat = outfit.hat { onCanvas(AccessoryArt(item: hat), size: size) }
         }

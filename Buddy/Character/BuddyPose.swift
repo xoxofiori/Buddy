@@ -1,9 +1,9 @@
 import SwiftUI
 
 /// Buddy's poses, matching BuddyCharacter/buddy_pose_sheet.png and CHARACTER.md.
-/// `eating` and `happy` are extra poses for the care rooms, made only from the same art parts.
+/// `eating`, `happy` and `hungry` are extra poses, made only from the same art parts.
 enum BuddyPose: String, Codable, CaseIterable {
-    case idle, talking, waving, armRaise, sleeping, needsCare, squat, eating, happy
+    case idle, talking, waving, armRaise, sleeping, needsCare, squat, eating, happy, hungry
 }
 
 /// Which eyes / brows / mouth art to show. Raw values are the asset names.
@@ -54,6 +54,9 @@ extension BuddyPose {
         case .happy:
             BuddyPoseSpec(eyes: .happy, brows: .normal, mouth: .open,
                           armLeft: 6, armRight: -6, head: 5, earLeft: -4, earRight: 4, tail: 10)
+        case .hungry:    // sad face, both paws on his tummy (rubbing it, see BuddyView)
+            BuddyPoseSpec(eyes: .open, brows: .worried, mouth: .o,
+                          armLeft: -16, armRight: 16, head: -5, earLeft: 8, earRight: -8, tail: -6)
         }
     }
 

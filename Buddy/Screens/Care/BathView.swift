@@ -278,14 +278,8 @@ struct BathView: View {
     /// The dirtier Buddy is, the more muddy spots he has (none when he's already clean).
     private func makeMud() {
         guard mud.isEmpty else { return }
-        let clean = store.state.needs.clean
-        guard clean < 0.95 else { return }
-        let count = min(8, max(2, Int(((1 - clean) * 8).rounded(.up))))
-        let spots: [(CGFloat, CGFloat, CGFloat)] = [
-            (215, 300, 50), (385, 135, 46), (300, 470, 70), (250, 560, 58),
-            (352, 600, 64), (266, 700, 50), (338, 706, 52), (404, 300, 48),
-        ]
-        mud = spots.prefix(count).map { MudSpot(x: $0.0, y: $0.1, size: $0.2) }
+        let count = MudLayout.count(clean: store.state.needs.clean)
+        mud = MudLayout.spots.prefix(count).map { MudSpot(x: $0.x, y: $0.y, size: $0.size) }
     }
 
     private func say(_ text: String, for seconds: Double = 2) {

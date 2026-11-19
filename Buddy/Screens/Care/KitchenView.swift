@@ -28,7 +28,7 @@ struct KitchenView: View {
     private var pose: BuddyPose {
         if let actionPose { return actionPose }
         if speech != nil { return .talking }
-        return store.state.needs.hunger < 0.3 ? .needsCare : .idle
+        return store.state.needs.hunger < 0.3 ? .hungry : .idle
     }
 
     var body: some View {

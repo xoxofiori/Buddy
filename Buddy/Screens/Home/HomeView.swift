@@ -21,7 +21,19 @@ struct HomeView: View {
 
     var body: some View {
         ZStack {
-            BackyardScene(time: time, needs: store.state.needs) { spot in
+            BackyardScene(time: time, needs: store.state.needs, layer: .scenery) { _ in }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+
+            // Time-of-day light over the sky, grass and fence only: the things you can tap
+            // (and their icons) and Buddy stay bright and clear all day.
+            Rectangle()
+                .fill(time.light)
+                .opacity(time.lightOpacity)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+
+            BackyardScene(time: time, needs: store.state.needs, layer: .objects) { spot in
                 room = spot.room
             }
             .ignoresSafeArea()
@@ -31,15 +43,10 @@ struct HomeView: View {
                 needs: store.state.needs,
                 time: time,
                 onFun: { store.addFun($0) },
-                onTapHeart: { sheet = .heart }
+                onTapHeart: { sheet = .heart },
+                onOpen: { room = $0 }
             )
 
-            // Time-of-day light over the whole yard, Buddy included
-            Rectangle()
-                .fill(time.light)
-                .opacity(time.lightOpacity)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
             if time == .night {
                 Fireflies().ignoresSafeArea()
             }
@@ -174,6 +181,8 @@ private struct BuddyStage: View {
     let time: TimeOfDay
     var onFun: (Double) -> Void
     var onTapHeart: () -> Void
+    /// Open a care room (from the "Hungry" / "Muddy" bubble).
+    var onOpen: (CareRoom) -> Void
 
     @State private var speech: String?
     @State private var gesturePose: BuddyPose?
@@ -187,12 +196,30 @@ private struct BuddyStage: View {
         min(needs.hunger, needs.energy, needs.clean, needs.fun) < 0.3
     }
 
+    /// Hungry enough to hold his tummy.
+    private var isHungry: Bool { needs.hunger < Self.hungryBelow }
+    /// Muddy enough to show spots.
+    private var isMuddy: Bool { needs.clean < Self.muddyBelow }
+
+    static let hungryBelow = 0.3
+    static let muddyBelow = 0.5
+
+    private var isAsleep: Bool { time == .night && Date() > awakeUntil }
+
     private var pose: BuddyPose {
         if let gesturePose { return gesturePose }
         if speech != nil { return .talking }
-        if time == .night && Date() > awakeUntil { return .sleeping }
+        if isAsleep { return .sleeping }
+        if isHungry { return .hungry }
         if needsCare { return .needsCare }
         return .idle
+    }
+
+    /// What Buddy most wants right now, shown as a tappable bubble over his head.
+    private var want: (label: String, icon: String, color: Color, room: CareRoom)? {
+        if isHungry { return ("Hungry", "fork.knife", .coral, .kitchen) }
+        if isMuddy { return ("Muddy", "bubbles.and.sparkles.fill", .sky, .bath) }
+        return nil
     }
 
     var body: some View {
@@ -204,8 +231,17 @@ private struct BuddyStage: View {
             BuddyView(pose: pose, height: height, interactive: true, onInteraction: handle) {
                 BuddyCollar(needs: needs)
             }
+            .environment(\.buddyMud, isMuddy ? MudLayout.count(clean: needs.clean) : 0)
             .accessibilityAction(named: "Show Buddy's heart", onTapHeart)
+            .overlay(alignment: .topTrailing) {
+                if speech == nil, !isAsleep, let want {
+                    WantBubble(label: want.label, icon: want.icon, color: want.color) { onOpen(want.room) }
+                        .offset(x: 24, y: -height * 0.02)
+                        .transition(.scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity))
+                }
+            }
             .overlay(alignment: .top) { bubble.offset(y: height * 0.02) }
+            .animation(BuddyView<EmptyView>.spring, value: want?.label)
             .overlay { heartLayer }
             .position(x: geo.size.width / 2, y: feetY - height * (752.0 / 800) + height / 2)
         }
@@ -218,6 +254,20 @@ private struct BuddyStage: View {
             say("Hi \(kidName)!", for: 2.4)
             try? await Task.sleep(for: .seconds(2.4))
             gesturePose = nil
+        }
+        .task(id: want?.label) {
+            // Every so often, Buddy says what he needs so the kid knows what to do.
+            guard let want else { return }
+            try? await Task.sleep(for: .seconds(4))
+            while !Task.isCancelled {
+                if !isAsleep, speech == nil, gesturePose == nil {
+                    say(want.room == .kitchen
+                        ? ["My tummy is rumbling… Can I have a snack?", "I'm so hungry! Tap my bowl?"].randomElement()!
+                        : ["I'm all muddy! Bath time?", "Eww, mud! Can you give me a bath?"].randomElement()!,
+                        for: 2.8)
+                }
+                try? await Task.sleep(for: .seconds(Double.random(in: 18...28)))
+            }
         }
     }
 
@@ -336,5 +386,51 @@ private struct FloatingHeartView: View {
             .onAppear {
                 withAnimation(.easeOut(duration: 1)) { rise = true }
             }
+    }
+}
+
+/// "Hungry" / "Muddy": a little thought bubble over Buddy. Tapping it opens the room that helps.
+private struct WantBubble: View {
+    let label: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+
+    @State private var bob = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Color.paper)
+                        .frame(width: 30, height: 30)
+                        .background(Circle().fill(color))
+                    Text(label)
+                        .font(.buddy(18, .heavy))
+                        .foregroundStyle(Color.deepTeal)
+                }
+                .padding(.leading, 6)
+                .padding(.trailing, 14)
+                .frame(minHeight: 44)
+                .background(StoryCard(shape: Capsule()))
+                // Thought-bubble dots trailing down toward Buddy
+                HStack(spacing: 4) {
+                    Circle().fill(Color.paper).frame(width: 11, height: 11)
+                    Circle().fill(Color.paper).frame(width: 7, height: 7).offset(x: -4, y: 7)
+                }
+                .padding(.leading, 12)
+                .shadow(color: .deepTeal.opacity(0.1), radius: 2, y: 1)
+            }
+            .frame(minWidth: Theme.minTap, minHeight: Theme.minTap)
+            .contentShape(Rectangle())
+            .offset(y: bob ? -4 : 2)
+        }
+        .buttonStyle(SquishStyle())
+        .accessibilityLabel("Buddy is \(label.lowercased()). Tap to help him.")
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) { bob = true }
+        }
     }
 }

@@ -35,7 +35,7 @@ enum TimeOfDay: String, CaseIterable, Identifiable {
         }
     }
 
-    /// A wash of color laid over the whole scene (including Buddy) to set the mood.
+    /// A wash of color laid over the sky, grass and fence (not Buddy or the tappable objects) to set the mood.
     var light: Color {
         switch self {
         case .morning: .sunny

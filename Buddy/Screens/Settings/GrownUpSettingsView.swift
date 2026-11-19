@@ -53,6 +53,20 @@ struct GrownUpSettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
+                section("Show Buddy's needs") {
+                    Text("Buddy gets hungry and muddy on his own over time. These skip the wait for a demo.")
+                        .font(.buddy(15, .semibold))
+                        .foregroundStyle(Color.deepTeal.opacity(0.6))
+                    HStack(spacing: 10) {
+                        demoNeed("Make hungry", icon: "fork.knife", color: .coral) {
+                            store.state.needs.hunger = 0.15
+                        }
+                        demoNeed("Make muddy", icon: "bubbles.and.sparkles.fill", color: .sky) {
+                            store.state.needs.clean = 0.2
+                        }
+                    }
+                }
+
                 section("Demo") {
                     Text("Clears the name, bones, Buddy's outfit and today's progress, and goes back to the start.")
                         .font(.buddy(15, .semibold))
@@ -90,6 +104,21 @@ struct GrownUpSettingsView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(StoryCard(shape: RoundedRectangle(cornerRadius: 22)))
+    }
+
+    private func demoNeed(_ title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button {
+            action()
+            Feedback.success()
+            onClose()
+        } label: {
+            Label(title, systemImage: icon)
+                .font(.buddy(16, .heavy))
+                .foregroundStyle(Color.paper)
+                .frame(maxWidth: .infinity, minHeight: Theme.minTap)
+                .background(Capsule().fill(color))
+        }
+        .buttonStyle(SquishStyle())
     }
 
     private func row(_ label: String, _ value: String) -> some View {

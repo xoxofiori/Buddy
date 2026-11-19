@@ -153,6 +153,26 @@ struct RenderSnapshots {
         }
     }
 
+    @Test func hungryAndMuddy() throws {
+        guard let dir = renderDir else { return }
+        let looks = HStack(spacing: 12) {
+            BuddyView(pose: .hungry, height: 320)
+            BuddyView(pose: .idle, height: 320).environment(\.buddyMud, 4)
+            BuddyView(pose: .hungry, height: 320).environment(\.buddyMud, 8)
+        }
+        .padding(20)
+        .background(Color.cream)
+        try save(looks, to: dir.appending(path: "hungry-muddy.png"))
+
+        let store = GameStore(fileURL: FileManager.default.temporaryDirectory.appending(path: "hm-\(UUID()).json"))
+        store.state.kidName = "Maya"
+        _ = store.redeem(code: "BUDDY123")
+        store.state.needs.hunger = 0.15
+        store.state.needs.clean = 0.2
+        try save(HomeView(forcedTime: .day).environment(store).fontDesign(.rounded).frame(width: 402, height: 874),
+                 to: dir.appending(path: "home-hungry-muddy.png"))
+    }
+
     private func save(_ view: some View, to url: URL) throws {
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2
